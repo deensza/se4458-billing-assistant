@@ -1,0 +1,5 @@
+# MCP server log (Azure Container Apps 'mcp-server'). Indexed ONCE at start-up; later queries reuse the index.
+2026-11-22 14:10:56,442 INFO billing_mcp: Indexed Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01) into 26 chunks.
+2026-11-22 15:00:03,836 INFO billing_mcp: search_billing_documentation('How much does extra internet cost?') -> ['8.1', '3.2', '2.2']
+2026-11-22 15:00:03,959 INFO billing_mcp: search_billing_documentation('What happens with late payments?') -> ['6.2', '6.1', '6.3']
+2026-11-22 15:00:04,015 INFO billing_mcp: search_billing_documentation('How can I dispute a charge on my bill?') -> ['8.4', '7.1', '7.2']

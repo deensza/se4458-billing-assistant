@@ -1,0 +1,10 @@
+# MCP server log (local docker compose). The guide is indexed ONCE at start-up; the 6 queries below
+# (scripts/mcp_demo.py run twice) reuse the same index - there is no 'Indexed' line per query.
+2026-11-22 14:59:21,513 INFO billing_mcp: Indexed Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01) into 26 chunks.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+2026-11-22 14:59:25,384 INFO billing_mcp: search_billing_documentation('How much does extra internet cost?') -> ['8.1', '3.2', '2.2']
+2026-11-22 14:59:25,426 INFO billing_mcp: search_billing_documentation('What happens with late payments?') -> ['6.2', '6.1', '6.3']
+2026-11-22 14:59:25,428 INFO billing_mcp: search_billing_documentation('How can I dispute a charge on my bill?') -> ['8.4', '7.1', '7.2']
+2026-11-22 14:59:25,927 INFO billing_mcp: search_billing_documentation('How much does extra internet cost?') -> ['8.1', '3.2', '2.2']
+2026-11-22 14:59:25,959 INFO billing_mcp: search_billing_documentation('What happens with late payments?') -> ['6.2', '6.1', '6.3']
+2026-11-22 14:59:25,963 INFO billing_mcp: search_billing_documentation('How can I dispute a charge on my bill?') -> ['8.4', '7.1', '7.2']

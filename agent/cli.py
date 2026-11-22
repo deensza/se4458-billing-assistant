@@ -42,7 +42,8 @@ def _short(value, limit: int = 600) -> str:
     return text if len(text) <= limit else text[:limit] + " …"
 
 
-def render_trace(turn: TurnResult, model: str) -> str:
+def render_trace(turn: TurnResult, model: str, full: bool = False) -> str:
+    """Markdown trace. full=True (saved files) keeps complete tool results; the terminal view shortens them."""
     lines = [f"### Question\n{turn.question}\n", "### Tool trace"]
     n = 0
     for step in turn.trace:
@@ -54,7 +55,8 @@ def render_trace(turn: TurnResult, model: str) -> str:
             d = step.data
             lines.append(f"- **Tool {n}: `{d['tool']}`** via *{d['route']}*{' (ERROR)' if d['isError'] else ''}")
             lines.append(f"  - input: `{json.dumps(d['input'], ensure_ascii=False)}`")
-            lines.append(f"  - result: `{_short(d['result'])}`")
+            result = _short(d["result"], limit=10**9 if full else 600)
+            lines.append(f"  - result: `{result}`")
     price_in, price_out = PRICES.get(model, (0, 0))
     cost = turn.usage["input_tokens"] / 1e6 * price_in + turn.usage["output_tokens"] / 1e6 * price_out
     lines += [
@@ -73,7 +75,7 @@ def save_trace(turn: TurnResult, model: str, label: str | None) -> Path:
     base.with_suffix(".json").write_text(
         json.dumps({"model": model, **turn.to_dict()}, indent=2, ensure_ascii=False, default=str), encoding="utf-8"
     )
-    base.with_suffix(".md").write_text(render_trace(turn, model) + "\n", encoding="utf-8")
+    base.with_suffix(".md").write_text(render_trace(turn, model, full=True) + "\n", encoding="utf-8")
     return base.with_suffix(".md")
 
 

@@ -75,8 +75,8 @@ infra/azure-deploy.sh   one-command Azure deployment (re-runnable)
 infra/reset-cloud-data.sh  reset the cloud database to the demo data
 scripts/                run_tests.sh, gateway_demo.sh, mcp_demo.py, render_er_diagram.py
 docs/                   openapi.json, er-diagram.png/.svg/.md, mcp-tool-schema.json, test-results.txt,
-                        mcp-retrieval-demo-*.txt,
-                        gateway-demo-*.txt, traces/, screenshots/
+                        test-results-postgresql.txt, mcp-retrieval-demo-*.txt, mcp-server-log-*.txt,
+                        gateway-demo-*.txt, traces/ (agent tool traces)
 docker-compose.yml      local stack (PostgreSQL + API + MCP + Kong)
 ```
 
@@ -220,7 +220,7 @@ Endpoint: `{MCP_URL}` = `http://localhost:8001/mcp` (Streamable HTTP, stateless,
 ### 9.2 Indexing approach ([`mcp_server/docs_index.py`](mcp_server/docs_index.py))
 1. **Chunking by headings:** each `### x.y` subsection is a chunk; a `## x` section without subsections is one chunk; the preamble is chunk `0`. That gives **26 chunks**. Headings inside code blocks are ignored. Each chunk keeps its section ID, heading, parent heading and text, so answers can cite "§3.2".
 2. **Tokenizing:** lowercase alphanumeric tokens, stop words removed, light plural stemming. Heading tokens are counted twice.
-3. **Index:** in-memory inverted index with **BM25** scoring (k1 = 1.5, b = 0.75), built **once at server start-up** (log line `Indexed Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01) into 26 chunks.`). Every query reuses it.
+3. **Index:** in-memory inverted index with **BM25** scoring (k1 = 1.5, b = 0.75), built **once at server start-up** (log line `Indexed Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01) into 26 chunks.`). Every query reuses it; the server logs show one `Indexed` line followed by many queries: [cloud](docs/mcp-server-log-cloud.txt), [local](docs/mcp-server-log-local.txt).
 4. **Query expansion:** a small domain synonym table maps user words to document words (`data → internet`, `extra → additional`, `call → phone`, `part → partial`, …).
 5. Returns the top **3** matches with score > 0. An unrelated query returns no matches (the agent then does not invent policy).
 
@@ -310,6 +310,20 @@ docker compose down -v && docker compose up -d
 | `mcp_server/tests` | 14 | chunking, tokenizer, 3 distinct retrieval queries, result format, MCP client↔server `list_tools`/`call_tool` |
 | `agent/tests` | 11 | tool routing (MCP-only, REST-only, combined) with a scripted fake LLM, payment confirmation gate, no `subscriberNo` in REST tools, API errors returned as tool errors, refusal and loop limits |
 
+**Every REST API operation has success and failure/edge-case tests** (`billing_api/tests`):
+
+| Operation | Success tests | Failure / edge-case tests |
+|---|---|---|
+| Add Usage | `test_add_phone_usage_adds_10_minutes`, `test_add_internet_usage_adds_1_mb`, `test_repeated_events_accumulate`, `test_spec_spelling_phone_and_internet_is_accepted`, `test_subscriber_can_add_usage_to_own_account` | `test_add_usage_unknown_subscriber_is_404`, `test_add_usage_invalid_type_and_month_is_422`, `test_subscriber_cannot_add_usage_to_another_account`, `test_add_usage_requires_token` |
+| Calculate Bill | `test_calculate_worked_example_is_80`, `test_calculate_with_no_usage_is_internet_base_50`, `test_partial_blocks_are_charged_as_full_blocks`, `test_usage_via_api_is_included`, `test_recalculation_updates_total_and_keeps_payments`, `test_subscriber_can_calculate_own_bill` | `test_calculate_unknown_subscriber_is_404`, `test_calculate_invalid_month_is_422`, `test_calculate_other_account_is_403_and_requires_token` |
+| Query Bill | `test_query_bill_returns_total_paid_remaining_status`, `test_query_bill_reflects_partial_payment` | `test_query_bill_not_calculated_is_404`, `test_query_bill_unknown_subscriber_is_404`, `test_query_bill_missing_or_invalid_params_is_422` |
+| Query Bill Detailed | `test_detailed_breakdown`, `test_detailed_paging`, `test_detailed_admin_can_read_any_account`, `test_detailed_flags_usage_added_after_calculation` | `test_detailed_page_beyond_last_is_empty`, `test_detailed_invalid_paging_is_422`, `test_detailed_other_subscriber_is_403`, `test_detailed_requires_token`, `test_detailed_bill_not_calculated_is_404` |
+| Pay Bill | `test_partial_payment`, `test_full_payment_in_two_steps_marks_paid`, `test_decimal_amounts_are_exact` | `test_duplicate_transaction_id_is_rejected`, `test_amount_exceeding_balance_is_rejected`, `test_paying_a_fully_paid_bill_is_409`, `test_zero_negative_or_too_precise_amount_is_422`, `test_missing_transaction_id_is_422`, `test_paying_another_subscribers_bill_is_403`, `test_pay_requires_token`, `test_pay_bill_not_calculated_is_404` |
+| Login (`/auth/token`) | `test_login_success_returns_jwt`, `test_login_token_works_on_protected_route` | `test_login_wrong_password_is_401`, `test_login_unknown_user_is_401`, `test_login_missing_fields_is_422`, `test_tampered_token_is_401`, `test_expired_token_is_401`, `test_protected_route_without_token_is_401` |
+| Business rules (pricing) | `test_phone_charge_examples`, `test_internet_charge_examples`, `test_worked_example_total_is_80`, `test_due_date_is_15_days_after_month_end`, `test_mb_to_gb_uses_1000_mb_per_gb` | `test_negative_usage_is_rejected` |
+| Gateway-only access | `test_request_with_gateway_header_is_accepted`, `test_health_is_open_for_platform_probes` | `test_direct_request_without_gateway_header_is_403`, `test_wrong_gateway_header_is_403` |
+
+**How to run** (after the Python environment of §10 step 2):
 ```bash
 ./scripts/run_tests.sh                 # runs all suites, saves output to docs/test-results.txt
 cd billing_api && ../.venv/bin/pytest  # a single suite
@@ -319,7 +333,7 @@ By default the API tests use a fresh **in-memory SQLite database per test** for 
 docker compose exec postgres psql -U billing -c "CREATE DATABASE billing_test;"
 cd billing_api && TEST_DATABASE_URL=postgresql+psycopg://billing:billing@localhost:5433/billing_test ../.venv/bin/pytest
 ```
-**Evidence:** [`docs/test-results.txt`](docs/test-results.txt): 76 + 14 + 11 = **101 passed**. The API suite also passes against PostgreSQL 16 (76 passed).
+**Evidence:** [`docs/test-results.txt`](docs/test-results.txt): 76 + 14 + 11 = **101 passed**. The API suite also passes against PostgreSQL 16: [`docs/test-results-postgresql.txt`](docs/test-results-postgresql.txt) (76 passed).
 
 ```
 $ ./scripts/run_tests.sh
@@ -329,9 +343,9 @@ tests/test_add_usage.py::test_add_phone_usage_adds_10_minutes PASSED
 tests/test_pay_bill.py::test_duplicate_transaction_id_is_rejected PASSED
 tests/test_pay_bill.py::test_amount_exceeding_balance_is_rejected PASSED
 ...
-============================== 76 passed in 8.20s ==============================
+============================== 76 passed in 8.06s ==============================
 ================ mcp_server ================
-============================== 14 passed in 0.38s ==============================
+============================== 14 passed in 0.37s ==============================
 ================ agent ================
 ============================== 11 passed in 0.02s ==============================
 ```
@@ -376,12 +390,13 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 | `user1003` / `Pass1003!` | SUBSCRIBER | 5551003 | Oct 2026: 1,010 min, 20,001 MB recorded, **bill not calculated yet** (admin demo: Calculate Bill → $70) |
 
 **Steps:**
-1. `docker compose up --build -d` (or use the cloud URLs in §12).
-2. Unit tests: `./scripts/run_tests.sh`.
+1. `docker compose up --build -d` (or use the cloud URLs in §12), then create the Python environment (§10 step 2).
+2. Unit tests: `./scripts/run_tests.sh` (no Docker, cloud or API key needed for this step).
 3. Gateway demo: `GATEWAY_URL=http://localhost:8000 ./scripts/gateway_demo.sh`.
 4. Swagger UI: open `/api/v1/docs`, call `POST /api/v1/auth/token`, click **Authorize**, paste the token, and try the protected operations.
-5. Agent: `.venv/bin/python agent/cli.py --user user1001 --password 'Pass1001!'` and ask the questions in §9.4. For the payment, answer `yes` to the confirmation prompt.
-6. Reset data: `docker compose down -v && docker compose up -d`.
+5. Agent (needs `ANTHROPIC_API_KEY` in `.env`, see `.env.example`): `.venv/bin/python agent/cli.py --user user1001 --password 'Pass1001!'` and ask the questions in §9.4. For the payment, answer `yes` to the confirmation prompt.
+6. MCP retrieval demo: `.venv/bin/python scripts/mcp_demo.py` (local) or with `MCP_URL=<cloud MCP URL>`.
+7. Reset data: `docker compose down -v && docker compose up -d` (cloud: `./infra/reset-cloud-data.sh`).
 
 ## 14. Demo video
 
@@ -404,6 +419,12 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 * Duplicate transaction ID → 409 even if the amount differs. The first payment is kept and the balance is unchanged.
 * Overpayment is not allowed. Paying a fully paid bill → 409.
 
+**API errors**
+* Every API error uses one JSON format: `{"error": {"code", "message", "details"}}` (full list of codes in §4). Validation problems return 422 `VALIDATION_ERROR` with the failing fields in `details`.
+* 401 = not authenticated (missing/invalid/expired token or wrong login); 403 = authenticated but not allowed (another subscriber's account) or the request bypassed the gateway (`GATEWAY_REQUIRED`); 404 = unknown subscriber or bill not calculated yet; 409 = duplicate transaction ID or bill already fully paid; 422 = invalid input or amount larger than the remaining balance.
+* Errors produced by the gateway itself (401 before reaching the API, 404 unknown route, 429 rate limit) use Kong's `{"message": "..."}` format.
+* For the agent, API errors are returned to the LLM as tool errors (`is_error: true`) so it can explain them (e.g. "the bill has not been calculated yet") instead of inventing values.
+
 **Identity and security**
 * Add Usage and Calculate Bill require authentication (as specified). A subscriber may call them for their own account; the ADMIN role may call them for any account.
 * Subscribers can read details and pay **only their own** account. Admins can access every account.
@@ -414,6 +435,7 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 **Policy interpretation**
 * Disputes and service restriction are explained from the guide only. There is no Dispute or service-status API (guide §7.2, §6.3).
 * "This month" for the agent = current calendar month. Bills are normally calculated after the month ends.
+* When the user names no billing period ("my bill", "Pay my bill"), the agent uses the most recent completed month. For "Pay my bill" without an amount it proposes the full remaining balance; the user must still confirm subscriber, period and amount (guide §5.2).
 
 **Gateway and deployment**
 * Rate limits (10/min login, 60/min public Query Bill per IP, 60/min per user on protected routes) are my own values, because Group 2 has no stated limits.

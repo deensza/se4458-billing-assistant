@@ -1,4 +1,4 @@
-Test run: 2026-11-22 14:08:56 UTC
+Test run: 2026-11-22 15:01:24 UTC
 
 ================ billing_api ================
 ============================= test session starts ==============================
@@ -86,7 +86,7 @@ tests/test_query_bill_detailed.py::test_detailed_admin_can_read_any_account PASS
 tests/test_query_bill_detailed.py::test_detailed_requires_token PASSED   [ 98%]
 tests/test_query_bill_detailed.py::test_detailed_bill_not_calculated_is_404 PASSED [100%]
 
-============================== 76 passed in 8.20s ==============================
+============================== 76 passed in 8.06s ==============================
 
 ================ mcp_server ================
 ============================= test session starts ==============================
@@ -112,7 +112,7 @@ tests/test_mcp_server.py::test_mcp_tool_is_listed_with_query_schema PASSED [ 85%
 tests/test_mcp_server.py::test_mcp_tool_call_returns_excerpts_with_sections PASSED [ 92%]
 tests/test_mcp_server.py::test_mcp_tool_empty_query_returns_message PASSED [100%]
 
-============================== 14 passed in 0.38s ==============================
+============================== 14 passed in 0.37s ==============================
 
 ================ agent ================
 ============================= test session starts ==============================

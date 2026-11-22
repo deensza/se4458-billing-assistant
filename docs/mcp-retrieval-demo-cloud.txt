@@ -1,5 +1,5 @@
 MCP server: https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp
-Run at: 2026-11-22 14:05:46 UTC
+Run at: 2026-11-22 15:00:03 UTC
 
 == tools/list
 - search_billing_documentation: input schema {"type": "object", "properties": {"query": {"description": "Natural-language search text, e.g. \"extra internet cost\" or \"late payment\"", "title": "Query", "type": "string"}}, "required": ["query"], "title": "search_billing_documentationArguments"}
