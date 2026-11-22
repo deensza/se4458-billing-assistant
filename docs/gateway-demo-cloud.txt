@@ -1,0 +1,95 @@
+Gateway: https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io
+
+### 1. Public route (no auth): GET /api/v1/bills  (Query Bill)
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills?subscriberNo=5551001&month=10&year=2026
+HTTP/2 200 
+x-ratelimit-remaining-minute: 59
+x-request-id: bcbd1eef-998e-4e71-a762-047780933d59
+x-api-gateway: kong
+{"subscriberNo":"5551001","month":10,"year":2026,"billTotal":80.0,"paidAmount":30.0,"remainingBalance":50.0,"status":"PARTIALLY_PAID","dueDate":"2026-11-15","calculatedAt":"2026-11-22T13:04:09.107042Z"}
+
+
+### 2. Protected route WITHOUT token -> rejected by the gateway (401)
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills/detailed?subscriberNo=5551001&month=10&year=2026
+HTTP/2 401 
+x-request-id: b7b21ac7-45e9-49d8-9145-026a18aafe38
+x-api-gateway: kong
+{"message":"Unauthorized"}
+
+
+### 3. Protected route with a FORGED token -> rejected by the gateway (401)
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills/detailed?subscriberNo=5551001&month=10&year=2026 -H Authorization: Bearer <JWT>
+HTTP/2 401 
+x-request-id: 848313ab-6971-4baa-9cca-07847871fd24
+x-api-gateway: kong
+{"message":"Invalid signature"}
+
+
+### 4. Login: POST /api/v1/auth/token (user1001)
+accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...
+
+### 5. Protected route WITH token -> 200 (page 1, pageSize 2)
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills/detailed?...&pageSize=2 -H 'Authorization: Bearer ...'
+HTTP/2 200 
+x-ratelimit-remaining-minute: 59
+{"subscriberNo":"5551001","month":10,"year":2026,"billTotal":80.0,"paidAmount":30.0,"remainingBalance":50.0,"status":"PARTIALLY_PAID","dueDate":"2026-11-15","calculatedAt":"2026-11-22T13:04:09.107042Z","phone":{"minutes":1350,"includedMinutes":1000,"extraBlocks":1,"blockSizeMinutes":1000,"blockPrice":10.0,"charge":10.0},"internet":{"usageMb":35000,"usageGb":35.0,"includedGb":20,"basePrice":50.0,"extraBlocks":2,"blockSizeGb":10,"blockPrice":10.0,"charge":70.0},"recalculationNeeded":false,"usageRecords":{"page":1,"pageSize":2,"totalItems":35135,"totalPages":17568,"items":[{"id":18081,"usageType":"PHONE","quantity":10,"unit":"MINUTES","recordedAt":"2026-10-01T08:00:00Z"},{"id":18216,"usageType"
+
+
+### 6. user1001 tries to read subscriber 5551002 -> 403 from the API (authorization)
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills/detailed?subscriberNo=5551002&month=10&year=2026 -H Authorization: Bearer <JWT>
+HTTP/2 403 
+x-ratelimit-remaining-minute: 58
+x-request-id: f42156ae-bdd0-4808-a60e-ee8a72d80dbb
+x-api-gateway: kong
+{"error":{"code":"FORBIDDEN","message":"You are not authorized to access another subscriber's account."}}
+
+
+### 7. user1001 tries to add usage to ANOTHER subscriber (5551002) -> 403
+$ curl -X POST https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/usage -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551002","month":10,"year":2026,"usageType":"Phone"}
+HTTP/2 403 
+x-ratelimit-remaining-minute: 57
+x-request-id: ff9bdc18-c183-4d29-83ca-e12897a5acf6
+x-api-gateway: kong
+{"error":{"code":"FORBIDDEN","message":"You are not authorized to access another subscriber's account."}}
+
+
+### 8. Simulated payment: $30 of the October bill (confirmed payment)
+$ curl -X POST https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":30,"transactionId":"DEMO-1795356681"}
+HTTP/2 201 
+x-ratelimit-remaining-minute: 56
+x-request-id: 25648e1b-a477-4e7b-9ae1-cfe73e379463
+x-api-gateway: kong
+{"paymentStatus":"SUCCESS","transactionId":"DEMO-1795356681","subscriberNo":"5551001","month":10,"year":2026,"paidAmount":30.0,"totalPaid":60.0,"remainingBalance":20.0,"billStatus":"PARTIALLY_PAID"}
+
+
+### 9. Same transaction ID again -> 409 DUPLICATE_TRANSACTION (balance unchanged)
+$ curl -X POST https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":30,"transactionId":"DEMO-1795356681"}
+HTTP/2 409 
+x-ratelimit-remaining-minute: 55
+x-request-id: 99207ea7-5b9c-4e69-af59-ca9f4c93c744
+x-api-gateway: kong
+{"error":{"code":"DUPLICATE_TRANSACTION","message":"Transaction ID DEMO-1795356681 has already been used. No new payment was recorded."}}
+
+
+### 10. Amount larger than the remaining balance -> 422 AMOUNT_EXCEEDS_BALANCE
+$ curl -X POST https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":1000,"transactionId":"DEMO-1795356681-B"}
+HTTP/2 422 
+x-ratelimit-remaining-minute: 54
+x-request-id: a2756d9c-3bac-4541-b2d2-3177a9af352d
+x-api-gateway: kong
+{"error":{"code":"AMOUNT_EXCEEDS_BALANCE","message":"Payment amount 1000 exceeds the remaining balance 20.00.","details":{"remainingBalance":20.0}}}
+
+
+### 11. Unknown route -> gateway 404
+$ curl https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v2/bills
+HTTP/2 404 
+x-request-id: d7412604-2f6b-42d1-b6ba-6f005215be5b
+x-api-gateway: kong
+{
+
+
+### 12. Direct call to the Billing API, bypassing the gateway -> 403 GATEWAY_REQUIRED
+$ curl https://billing-api.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/bills?subscriberNo=5551001&month=10&year=2026
+HTTP/2 403 
+{"error":{"code":"GATEWAY_REQUIRED","message":"This API is only reachable through the API Gateway."}}
+

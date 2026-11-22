@@ -1,0 +1,86 @@
+{
+  "model": "claude-haiku-5-5",
+  "question": "Pay my bill",
+  "trace": [
+    {
+      "kind": "llm",
+      "stopReason": "tool_use",
+      "selectedTools": [
+        {
+          "name": "query_bill",
+          "input": {
+            "month": 10,
+            "year": 2026
+          }
+        }
+      ]
+    },
+    {
+      "kind": "tool",
+      "tool": "query_bill",
+      "route": "REST via API Gateway",
+      "input": {
+        "month": 10,
+        "year": 2026
+      },
+      "result": {
+        "subscriberNo": "5551001",
+        "month": 10,
+        "year": 2026,
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "dueDate": "2026-11-15",
+        "calculatedAt": "2026-11-22T14:04:06.587959Z"
+      },
+      "isError": false
+    },
+    {
+      "kind": "llm",
+      "stopReason": "tool_use",
+      "selectedTools": [
+        {
+          "name": "pay_bill",
+          "input": {
+            "month": 10,
+            "year": 2026,
+            "amount": 80.0
+          }
+        }
+      ]
+    },
+    {
+      "kind": "tool",
+      "tool": "pay_bill",
+      "route": "REST via API Gateway",
+      "input": {
+        "month": 10,
+        "year": 2026,
+        "amount": 80.0
+      },
+      "result": {
+        "paymentStatus": "SUCCESS",
+        "transactionId": "AGENT-d899bd57-94cd-40a7-848f-f46afa85acf3",
+        "subscriberNo": "5551001",
+        "month": 10,
+        "year": 2026,
+        "paidAmount": 80.0,
+        "totalPaid": 80.0,
+        "remainingBalance": 0.0,
+        "billStatus": "PAID"
+      },
+      "isError": false
+    },
+    {
+      "kind": "llm",
+      "stopReason": "end_turn",
+      "selectedTools": []
+    }
+  ],
+  "finalAnswer": "Your October 2026 bill has been paid.\n\n- **Amount paid:** $80.00\n- **Remaining balance:** $0.00\n- **Bill status:** PAID\n- **Transaction ID:** AGENT-d899bd57-94cd-40a7-848f-f46afa85acf3\n\nNote that this bill's due date was November 15, 2026, so it was past due when paid.",
+  "usage": {
+    "input_tokens": 7345,
+    "output_tokens": 501
+  }
+}

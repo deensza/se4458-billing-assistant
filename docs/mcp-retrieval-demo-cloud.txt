@@ -1,0 +1,32 @@
+MCP server: https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp
+Run at: 2026-11-22 14:05:46 UTC
+
+== tools/list
+- search_billing_documentation: input schema {"type": "object", "properties": {"query": {"description": "Natural-language search text, e.g. \"extra internet cost\" or \"late payment\"", "title": "Query", "type": "string"}}, "required": ["query"], "title": "search_billing_documentationArguments"}
+
+== Retrieval test 1: search_billing_documentation(query='How much does extra internet cost?')
+document: Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01), isError=False
+  §8.1 What is the cost of extra internet?  [8. Frequently asked questions]  score=9.43
+      Each additional 10 GB block beyond 20 GB costs $10. Partially used blocks are rounded up. See Section 3.2.
+  §3.2 Additional internet blocks  [3. Internet pricing]  score=7.267
+      Each additional **10 GB block** costs **$10**. A partially used additional block is charged as a full block. For example, 20 GB costs $50; 21 GB costs $60; 30 G…
+  §2.2 Additional minutes  [2. Phone call pricing]  score=5.465
+      Each **additional 1,000-minute block** costs **$10**. A partially used additional block is charged as a full block. For example, 1,001 minutes costs $10 in phon…
+
+== Retrieval test 2: search_billing_documentation(query='What happens with late payments?')
+document: Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01), isError=False
+  §6.2 Late payment reminder  [6. Late payments and restrictions]  score=5.749
+      An unpaid bill may trigger a reminder after its due date. The reminder itself does not add a fee.
+  §6.1 Due date  [6. Late payments and restrictions]  score=3.449
+      A monthly bill is due **15 calendar days after the end of its billing month**. For example, an October 2026 bill is due November 15, 2026.
+  §6.3 Service restriction  [6. Late payments and restrictions]  score=3.294
+      Service **may** be restricted when a bill remains unpaid for **30 days after the due date**, subject to customer support review. This is a policy description, n…
+
+== Retrieval test 3: search_billing_documentation(query='How can I dispute a charge on my bill?')
+document: Mobile_Provider_Billing_Guide.md (MOB-BILLING-2026-01), isError=False
+  §8.4 How can I dispute a charge?  [8. Frequently asked questions]  score=5.408
+      Submit the billing period, disputed amount, and explanation within 15 days of bill issuance. See Section 7.
+  §7.1 Dispute window  [7. Billing disputes]  score=4.134
+      Subscribers may submit a billing dispute within **15 calendar days of the bill issue date**.
+  §7.2 Information required  [7. Billing disputes]  score=3.086
+      A dispute should include the subscriber number, billing period, disputed amount, and explanation. The AI assistant may explain this process but does not have a …

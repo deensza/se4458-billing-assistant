@@ -1,0 +1,1267 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mobile Provider Billing API",
+    "description": "\nBilling REST API for the **Mobile Provider Billing Assistant** (SE 4458 Midterm, Group 2).\n\n* All operations are versioned under `/api/v1`.\n* In deployment every call goes through the API Gateway (Kong).\n* Protected operations need `Authorization: Bearer <JWT>`. Get a token from `POST /api/v1/auth/token`.\n* Errors always use the format `{\"error\": {\"code\": \"...\", \"message\": \"...\", \"details\": ...}}`.\n",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/token": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log in and obtain a JWT access token",
+        "operationId": "login_api_v1_auth_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usage": {
+      "post": {
+        "tags": [
+          "Usage"
+        ],
+        "summary": "Add Usage (Phone = +10 minutes, Internet = +1 MB)",
+        "description": "Records one usage event for the subscriber and billing month. **Auth: required** (the subscriber for their own account, or ADMIN for any account).",
+        "operationId": "add_usage_api_v1_usage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUsageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddUsageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/bills/calculate": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Calculate Bill",
+        "description": "Calculates and stores the bill for the subscriber and month from the recorded usage. Re-running it recalculates the bill and keeps payments already made. **Auth: required** (the subscriber for their own account, or ADMIN for any account).",
+        "operationId": "calculate_bill_api_v1_bills_calculate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculateBillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalculateBillResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/bills": {
+      "get": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Query Bill",
+        "description": "Returns bill total, paid amount, remaining balance and status. **Auth: none (public).**",
+        "operationId": "query_bill_api_v1_bills_get",
+        "parameters": [
+          {
+            "name": "subscriberNo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4,20}$",
+              "description": "Subscriber number (digits)",
+              "examples": [
+                "5551001"
+              ],
+              "title": "Subscriberno"
+            },
+            "description": "Subscriber number (digits)"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Billing month (1-12)",
+              "examples": [
+                10
+              ],
+              "title": "Month"
+            },
+            "description": "Billing month (1-12)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "description": "Billing year",
+              "examples": [
+                2026
+              ],
+              "title": "Year"
+            },
+            "description": "Billing year"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/bills/detailed": {
+      "get": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Query Bill Detailed (paged usage records)",
+        "description": "Returns the bill summary, the phone/internet charge breakdown and a page of the usage records of the month. **Auth: the subscriber (own account) or ADMIN. Paging: page, pageSize.**",
+        "operationId": "query_bill_detailed_api_v1_bills_detailed_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subscriberNo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4,20}$",
+              "description": "Subscriber number (digits)",
+              "examples": [
+                "5551001"
+              ],
+              "title": "Subscriberno"
+            },
+            "description": "Subscriber number (digits)"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Billing month (1-12)",
+              "examples": [
+                10
+              ],
+              "title": "Month"
+            },
+            "description": "Billing month (1-12)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "description": "Billing year",
+              "examples": [
+                2026
+              ],
+              "title": "Year"
+            },
+            "description": "Billing year"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Pagesize"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillDetailedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/payments": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Pay Bill (simulated full or partial payment)",
+        "description": "Records a simulated payment. Rejects duplicate transaction IDs (409) and amounts larger than the remaining balance (422). No real card processing. **Auth: the subscriber (own account) or ADMIN.**",
+        "operationId": "pay_bill_api_v1_payments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayBillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayBillResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Liveness check",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddUsageRequest": {
+        "properties": {
+          "subscriberNo": {
+            "type": "string",
+            "pattern": "^[0-9]{4,20}$",
+            "title": "Subscriberno",
+            "description": "Subscriber number (digits)",
+            "examples": [
+              "5551001"
+            ]
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "description": "Billing month (1-12)",
+            "examples": [
+              10
+            ]
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Year",
+            "description": "Billing year",
+            "examples": [
+              2026
+            ]
+          },
+          "usageType": {
+            "$ref": "#/components/schemas/UsageType",
+            "description": "Phone adds 10 minutes, Internet adds 1 MB (case-insensitive: Phone/PHONE/phone)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscriberNo",
+          "month",
+          "year",
+          "usageType"
+        ],
+        "title": "AddUsageRequest"
+      },
+      "AddUsageResponse": {
+        "properties": {
+          "transactionStatus": {
+            "type": "string",
+            "title": "Transactionstatus",
+            "examples": [
+              "SUCCESS"
+            ]
+          },
+          "usageId": {
+            "type": "integer",
+            "title": "Usageid"
+          },
+          "subscriberNo": {
+            "type": "string",
+            "title": "Subscriberno"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "usageType": {
+            "$ref": "#/components/schemas/UsageType"
+          },
+          "quantityAdded": {
+            "type": "integer",
+            "title": "Quantityadded"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "examples": [
+              "MINUTES",
+              "MB"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "transactionStatus",
+          "usageId",
+          "subscriberNo",
+          "month",
+          "year",
+          "usageType",
+          "quantityAdded",
+          "unit"
+        ],
+        "title": "AddUsageResponse"
+      },
+      "BillDetailedResponse": {
+        "properties": {
+          "subscriberNo": {
+            "type": "string",
+            "title": "Subscriberno"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "billTotal": {
+            "type": "number",
+            "title": "Billtotal"
+          },
+          "paidAmount": {
+            "type": "number",
+            "title": "Paidamount"
+          },
+          "remainingBalance": {
+            "type": "number",
+            "title": "Remainingbalance"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BillStatus"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Duedate"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculatedat"
+          },
+          "phone": {
+            "$ref": "#/components/schemas/PhoneBreakdown"
+          },
+          "internet": {
+            "$ref": "#/components/schemas/InternetBreakdown"
+          },
+          "recalculationNeeded": {
+            "type": "boolean",
+            "title": "Recalculationneeded",
+            "description": "True when usage was added after the bill was calculated (call Calculate Bill again)"
+          },
+          "usageRecords": {
+            "$ref": "#/components/schemas/PagedUsageRecords"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscriberNo",
+          "month",
+          "year",
+          "billTotal",
+          "paidAmount",
+          "remainingBalance",
+          "status",
+          "dueDate",
+          "calculatedAt",
+          "phone",
+          "internet",
+          "recalculationNeeded",
+          "usageRecords"
+        ],
+        "title": "BillDetailedResponse"
+      },
+      "BillStatus": {
+        "type": "string",
+        "enum": [
+          "UNPAID",
+          "PARTIALLY_PAID",
+          "PAID"
+        ],
+        "title": "BillStatus"
+      },
+      "BillSummary": {
+        "properties": {
+          "subscriberNo": {
+            "type": "string",
+            "title": "Subscriberno"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "billTotal": {
+            "type": "number",
+            "title": "Billtotal"
+          },
+          "paidAmount": {
+            "type": "number",
+            "title": "Paidamount"
+          },
+          "remainingBalance": {
+            "type": "number",
+            "title": "Remainingbalance"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BillStatus"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Duedate"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscriberNo",
+          "month",
+          "year",
+          "billTotal",
+          "paidAmount",
+          "remainingBalance",
+          "status",
+          "dueDate",
+          "calculatedAt"
+        ],
+        "title": "BillSummary"
+      },
+      "CalculateBillRequest": {
+        "properties": {
+          "subscriberNo": {
+            "type": "string",
+            "pattern": "^[0-9]{4,20}$",
+            "title": "Subscriberno",
+            "description": "Subscriber number (digits)",
+            "examples": [
+              "5551001"
+            ]
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "description": "Billing month (1-12)",
+            "examples": [
+              10
+            ]
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Year",
+            "description": "Billing year",
+            "examples": [
+              2026
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscriberNo",
+          "month",
+          "year"
+        ],
+        "title": "CalculateBillRequest"
+      },
+      "CalculateBillResponse": {
+        "properties": {
+          "transactionStatus": {
+            "type": "string",
+            "title": "Transactionstatus",
+            "examples": [
+              "SUCCESS"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "CREATED for a new bill, RECALCULATED for an existing bill"
+          },
+          "bill": {
+            "$ref": "#/components/schemas/BillSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transactionStatus",
+          "action",
+          "bill"
+        ],
+        "title": "CalculateBillResponse"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "examples": [
+              "BILL_NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "InternetBreakdown": {
+        "properties": {
+          "usageMb": {
+            "type": "integer",
+            "title": "Usagemb"
+          },
+          "usageGb": {
+            "type": "number",
+            "title": "Usagegb"
+          },
+          "includedGb": {
+            "type": "integer",
+            "title": "Includedgb"
+          },
+          "basePrice": {
+            "type": "number",
+            "title": "Baseprice"
+          },
+          "extraBlocks": {
+            "type": "integer",
+            "title": "Extrablocks"
+          },
+          "blockSizeGb": {
+            "type": "integer",
+            "title": "Blocksizegb"
+          },
+          "blockPrice": {
+            "type": "number",
+            "title": "Blockprice"
+          },
+          "charge": {
+            "type": "number",
+            "title": "Charge"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usageMb",
+          "usageGb",
+          "includedGb",
+          "basePrice",
+          "extraBlocks",
+          "blockSizeGb",
+          "blockPrice",
+          "charge"
+        ],
+        "title": "InternetBreakdown"
+      },
+      "PagedUsageRecords": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalItems": {
+            "type": "integer",
+            "title": "Totalitems"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UsageRecordOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "pageSize",
+          "totalItems",
+          "totalPages",
+          "items"
+        ],
+        "title": "PagedUsageRecords"
+      },
+      "PayBillRequest": {
+        "properties": {
+          "subscriberNo": {
+            "type": "string",
+            "pattern": "^[0-9]{4,20}$",
+            "title": "Subscriberno",
+            "description": "Subscriber number (digits)",
+            "examples": [
+              "5551001"
+            ]
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "description": "Billing month (1-12)",
+            "examples": [
+              10
+            ]
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Year",
+            "description": "Billing year",
+            "examples": [
+              2026
+            ]
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Amount",
+            "examples": [
+              30.0
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:\\-]+$",
+            "title": "Transactionid",
+            "examples": [
+              "TXN-2026-10-0001"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "subscriberNo",
+          "month",
+          "year",
+          "amount",
+          "transactionId"
+        ],
+        "title": "PayBillRequest"
+      },
+      "PayBillResponse": {
+        "properties": {
+          "paymentStatus": {
+            "type": "string",
+            "title": "Paymentstatus",
+            "examples": [
+              "SUCCESS"
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "title": "Transactionid"
+          },
+          "subscriberNo": {
+            "type": "string",
+            "title": "Subscriberno"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "paidAmount": {
+            "type": "number",
+            "title": "Paidamount",
+            "description": "Amount of this payment"
+          },
+          "totalPaid": {
+            "type": "number",
+            "title": "Totalpaid",
+            "description": "Total paid for this bill so far"
+          },
+          "remainingBalance": {
+            "type": "number",
+            "title": "Remainingbalance"
+          },
+          "billStatus": {
+            "$ref": "#/components/schemas/BillStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "paymentStatus",
+          "transactionId",
+          "subscriberNo",
+          "month",
+          "year",
+          "paidAmount",
+          "totalPaid",
+          "remainingBalance",
+          "billStatus"
+        ],
+        "title": "PayBillResponse"
+      },
+      "PhoneBreakdown": {
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "includedMinutes": {
+            "type": "integer",
+            "title": "Includedminutes"
+          },
+          "extraBlocks": {
+            "type": "integer",
+            "title": "Extrablocks"
+          },
+          "blockSizeMinutes": {
+            "type": "integer",
+            "title": "Blocksizeminutes"
+          },
+          "blockPrice": {
+            "type": "number",
+            "title": "Blockprice"
+          },
+          "charge": {
+            "type": "number",
+            "title": "Charge"
+          }
+        },
+        "type": "object",
+        "required": [
+          "minutes",
+          "includedMinutes",
+          "extraBlocks",
+          "blockSizeMinutes",
+          "blockPrice",
+          "charge"
+        ],
+        "title": "PhoneBreakdown"
+      },
+      "TokenRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Username",
+            "examples": [
+              "user1001"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "examples": [
+              "Pass1001!"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "TokenRequest"
+      },
+      "TokenResponse": {
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "title": "Accesstoken"
+          },
+          "tokenType": {
+            "type": "string",
+            "title": "Tokentype",
+            "default": "Bearer"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "title": "Expiresin",
+            "description": "Seconds until the token expires"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "subscriberNo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriberno"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "role",
+          "subscriberNo"
+        ],
+        "title": "TokenResponse"
+      },
+      "UsageRecordOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usageType": {
+            "$ref": "#/components/schemas/UsageType"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recordedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usageType",
+          "quantity",
+          "unit",
+          "recordedAt"
+        ],
+        "title": "UsageRecordOut"
+      },
+      "UsageType": {
+        "type": "string",
+        "enum": [
+          "PHONE",
+          "INTERNET"
+        ],
+        "title": "UsageType"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "SUBSCRIBER",
+          "ADMIN"
+        ],
+        "title": "UserRole"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "JWT from POST /api/v1/auth/token",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

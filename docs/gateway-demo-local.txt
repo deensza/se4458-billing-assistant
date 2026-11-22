@@ -1,0 +1,89 @@
+Gateway: http://localhost:8000
+
+### 1. Public route (no auth): GET /api/v1/bills  (Query Bill)
+$ curl http://localhost:8000/api/v1/bills?subscriberNo=5551001&month=10&year=2026
+HTTP/1.1 200 OK
+X-RateLimit-Remaining-Minute: 59
+X-Request-ID: 021858f9-03c3-48bf-ac35-35759084f64c
+X-API-Gateway: kong
+{"subscriberNo":"5551001","month":10,"year":2026,"billTotal":80.0,"paidAmount":0.0,"remainingBalance":80.0,"status":"UNPAID","dueDate":"2026-11-15","calculatedAt":"2026-11-22T14:11:42.268716Z"}
+
+
+### 2. Protected route WITHOUT token -> rejected by the gateway (401)
+$ curl http://localhost:8000/api/v1/bills/detailed?subscriberNo=5551001&month=10&year=2026
+HTTP/1.1 401 Unauthorized
+X-Request-ID: fc10607d-fcc6-40a8-a831-01218cf528d6
+X-API-Gateway: kong
+{"message":"Unauthorized"}
+
+
+### 3. Protected route with a FORGED token -> rejected by the gateway (401)
+$ curl http://localhost:8000/api/v1/bills/detailed?subscriberNo=5551001&month=10&year=2026 -H Authorization: Bearer <JWT>
+HTTP/1.1 401 Unauthorized
+X-Request-ID: 2066b2e3-37ce-4815-81e4-79578818754a
+X-API-Gateway: kong
+{"message":"Invalid signature"}
+
+
+### 4. Login: POST /api/v1/auth/token (user1001)
+accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ...
+
+### 5. Protected route WITH token -> 200 (page 1, pageSize 2)
+$ curl http://localhost:8000/api/v1/bills/detailed?...&pageSize=2 -H 'Authorization: Bearer ...'
+HTTP/1.1 200 OK
+X-RateLimit-Remaining-Minute: 59
+{"subscriberNo":"5551001","month":10,"year":2026,"billTotal":80.0,"paidAmount":0.0,"remainingBalance":80.0,"status":"UNPAID","dueDate":"2026-11-15","calculatedAt":"2026-11-22T14:11:42.268716Z","phone":{"minutes":1350,"includedMinutes":1000,"extraBlocks":1,"blockSizeMinutes":1000,"blockPrice":10.0,"charge":10.0},"internet":{"usageMb":35000,"usageGb":35.0,"includedGb":20,"basePrice":50.0,"extraBlocks":2,"blockSizeGb":10,"blockPrice":10.0,"charge":70.0},"recalculationNeeded":false,"usageRecords":{"page":1,"pageSize":2,"totalItems":35135,"totalPages":17568,"items":[{"id":18081,"usageType":"PHONE","quantity":10,"unit":"MINUTES","recordedAt":"2026-10-01T08:00:00Z"},{"id":18216,"usageType":"INTERNE
+
+
+### 6. user1001 tries to read subscriber 5551002 -> 403 from the API (authorization)
+$ curl http://localhost:8000/api/v1/bills/detailed?subscriberNo=5551002&month=10&year=2026 -H Authorization: Bearer <JWT>
+HTTP/1.1 403 Forbidden
+X-RateLimit-Remaining-Minute: 58
+X-Request-ID: 41adb6fc-b7e1-4a2a-890a-df8b37fd2e9d
+X-API-Gateway: kong
+{"error":{"code":"FORBIDDEN","message":"You are not authorized to access another subscriber's account."}}
+
+
+### 7. user1001 tries to add usage to ANOTHER subscriber (5551002) -> 403
+$ curl -X POST http://localhost:8000/api/v1/usage -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551002","month":10,"year":2026,"usageType":"Phone"}
+HTTP/1.1 403 Forbidden
+X-RateLimit-Remaining-Minute: 57
+X-Request-ID: cb771099-d0a2-4369-ba5f-a598c42e67f8
+X-API-Gateway: kong
+{"error":{"code":"FORBIDDEN","message":"You are not authorized to access another subscriber's account."}}
+
+
+### 8. Simulated payment: $30 of the October bill (confirmed payment)
+$ curl -X POST http://localhost:8000/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":30,"transactionId":"DEMO-1795356707"}
+HTTP/1.1 201 Created
+X-RateLimit-Remaining-Minute: 56
+X-Request-ID: 07be0275-89fc-4e23-8238-04701bd7ffd8
+X-API-Gateway: kong
+{"paymentStatus":"SUCCESS","transactionId":"DEMO-1795356707","subscriberNo":"5551001","month":10,"year":2026,"paidAmount":30.0,"totalPaid":30.0,"remainingBalance":50.0,"billStatus":"PARTIALLY_PAID"}
+
+
+### 9. Same transaction ID again -> 409 DUPLICATE_TRANSACTION (balance unchanged)
+$ curl -X POST http://localhost:8000/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":30,"transactionId":"DEMO-1795356707"}
+HTTP/1.1 409 Conflict
+X-RateLimit-Remaining-Minute: 55
+X-Request-ID: 4f998840-a96c-4e07-aa35-c076a3ca2bd9
+X-API-Gateway: kong
+{"error":{"code":"DUPLICATE_TRANSACTION","message":"Transaction ID DEMO-1795356707 has already been used. No new payment was recorded."}}
+
+
+### 10. Amount larger than the remaining balance -> 422 AMOUNT_EXCEEDS_BALANCE
+$ curl -X POST http://localhost:8000/api/v1/payments -H Authorization: Bearer <JWT> -H Content-Type: application/json -d {"subscriberNo":"5551001","month":10,"year":2026,"amount":1000,"transactionId":"DEMO-1795356707-B"}
+HTTP/1.1 422 Unprocessable Entity
+X-RateLimit-Remaining-Minute: 54
+X-Request-ID: dd3952de-f7b4-434e-91b7-a87e363a7a03
+X-API-Gateway: kong
+{"error":{"code":"AMOUNT_EXCEEDS_BALANCE","message":"Payment amount 1000 exceeds the remaining balance 50.00.","details":{"remainingBalance":50.0}}}
+
+
+### 11. Unknown route -> gateway 404
+$ curl http://localhost:8000/api/v2/bills
+HTTP/1.1 404 Not Found
+X-Request-ID: 9e743b60-53b2-458f-8be4-e4b41ca037d4
+X-API-Gateway: kong
+{
+

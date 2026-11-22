@@ -1,0 +1,108 @@
+# Kong API Gateway - declarative (DB-less) configuration.
+# Placeholders __BILLING_API_URL__, __JWT_SECRET__, __JWT_ISSUER__ are filled by entrypoint.sh from env vars,
+# so the SAME file is used locally (docker compose) and in the cloud (Azure Container Apps).
+#
+# Public versioned routes (path is forwarded unchanged to the Billing API, strip_path: false):
+#   POST /api/v1/auth/token         -> billing-api  public (rate limit per client IP: 10/min)
+#   GET  /api/v1/bills               -> billing-api  public Query Bill (rate limit per client IP: 60/min)
+#   GET  /api/v1/bills/detailed      -> billing-api  PROTECTED (JWT) Query Bill Detailed
+#   POST /api/v1/bills/calculate     -> billing-api  PROTECTED (JWT, ADMIN checked by API) Calculate Bill
+#   POST /api/v1/usage               -> billing-api  PROTECTED (JWT, ADMIN checked by API) Add Usage
+#   POST /api/v1/payments            -> billing-api  PROTECTED (JWT) Pay Bill
+#   GET  /api/v1/docs, /api/v1/openapi.json, /health -> billing-api Swagger UI / OpenAPI / health
+# Protected routes are rate limited per authenticated identity (JWT "sub"), not per IP: 60/min.
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: billing-api-v1
+    url: __BILLING_API_URL__
+    connect_timeout: 10000
+    read_timeout: 30000
+    routes:
+      - name: auth-token
+        paths: ["/api/v1/auth/token"]
+        methods: ["POST"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 10, policy: local, limit_by: ip }
+
+      - name: query-bill-public
+        paths: ["~/api/v1/bills$"]
+        methods: ["GET"]
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config: { minute: 60, policy: local, limit_by: ip }
+
+      - name: billing-protected
+        paths:
+          - "/api/v1/bills/detailed"
+          - "/api/v1/bills/calculate"
+          - "/api/v1/usage"
+          - "/api/v1/payments"
+        methods: ["GET", "POST"]
+        strip_path: false
+        plugins:
+          # 1) Derive the rate-limit key from the JWT subject (runs first; the header sent by the
+          #    client is always overwritten, so it cannot be spoofed).
+          - name: pre-function
+            config:
+              access:
+                - |
+                  local key = "anonymous"
+                  local auth = kong.request.get_header("authorization")
+                  if auth then
+                    local token = auth:match("^[Bb]earer%s+(.+)$")
+                    local payload = token and token:match("^[^.]+%.([^.]+)%.")
+                    if payload then
+                      payload = payload:gsub("%-", "+"):gsub("_", "/")
+                      local pad = #payload % 4
+                      if pad > 0 then payload = payload .. string.rep("=", 4 - pad) end
+                      local decoded = ngx.decode_base64(payload)
+                      local claims = decoded and require("cjson.safe").decode(decoded)
+                      if type(claims) == "table" and claims.sub then key = "user:" .. tostring(claims.sub) end
+                    end
+                  end
+                  kong.service.request.set_header("X-Rate-Limit-Key", key)
+          # 2) Validate the JWT signature (HS256) and expiry at the gateway.
+          - name: jwt
+            config:
+              key_claim_name: iss
+              claims_to_verify: ["exp"]
+              header_names: ["authorization"]
+              uri_param_names: []
+              cookie_names: []
+          # 3) Rate limit per authenticated identity.
+          - name: rate-limiting
+            config: { minute: 60, policy: local, limit_by: header, header_name: X-Rate-Limit-Key }
+
+      - name: api-docs
+        paths: ["/api/v1/docs", "/api/v1/openapi.json", "/health"]
+        methods: ["GET"]
+        strip_path: false
+
+consumers:
+  - username: billing-auth-service
+    custom_id: se4458-billing-auth
+    jwt_secrets:
+      - key: __JWT_ISSUER__
+        algorithm: HS256
+        secret: __JWT_SECRET__
+
+plugins:
+  - name: correlation-id
+    config: { header_name: X-Request-ID, generator: uuid, echo_downstream: true }
+  # Origin protection: drop any client-supplied value and add the real gateway secret.
+  # The Billing API rejects requests without it (403 GATEWAY_REQUIRED), so it cannot be called directly.
+  - name: request-transformer
+    config:
+      remove:
+        headers: ["X-Gateway-Secret"]
+      add:
+        headers: ["X-Gateway-Secret:__GATEWAY_SECRET__"]
+  - name: response-transformer
+    config:
+      add:
+        headers: ["X-API-Gateway:kong", "X-API-Version:v1"]

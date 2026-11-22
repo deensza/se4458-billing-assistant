@@ -1,0 +1,108 @@
+{
+  "name": "search_billing_documentation",
+  "description": "Full-text search over the Mobile Provider Billing Guide (MOB-BILLING-2026-01). Use it for billing rules: phone/internet pricing and allowances, bill calculation, billing cycles and due dates, partial payments, late payments/service restriction and disputes. Returns up to 3 excerpts, each with section id, heading and text, so answers can cite e.g. 'Section 3.2'. It does NOT contain any subscriber's bill, usage or payment records.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "description": "Natural-language search text, e.g. \"extra internet cost\" or \"late payment\"",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "search_billing_documentationArguments"
+  },
+  "outputSchema": {
+    "$defs": {
+      "PolicyMatch": {
+        "properties": {
+          "section": {
+            "description": "Section id in the guide, e.g. '3.2'",
+            "title": "Section",
+            "type": "string"
+          },
+          "heading": {
+            "description": "Section heading, e.g. 'Additional internet blocks'",
+            "title": "Heading",
+            "type": "string"
+          },
+          "parentHeading": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parent section, e.g. '3. Internet pricing'",
+            "title": "Parentheading"
+          },
+          "text": {
+            "description": "Excerpt text of the section",
+            "title": "Text",
+            "type": "string"
+          },
+          "score": {
+            "description": "BM25 relevance score",
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "section",
+          "heading",
+          "parentHeading",
+          "text",
+          "score"
+        ],
+        "title": "PolicyMatch",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "document": {
+        "title": "Document",
+        "type": "string"
+      },
+      "documentId": {
+        "title": "Documentid",
+        "type": "string"
+      },
+      "query": {
+        "title": "Query",
+        "type": "string"
+      },
+      "matches": {
+        "items": {
+          "$ref": "#/$defs/PolicyMatch"
+        },
+        "title": "Matches",
+        "type": "array"
+      },
+      "message": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Message"
+      }
+    },
+    "required": [
+      "document",
+      "documentId",
+      "query",
+      "matches"
+    ],
+    "title": "SearchResult",
+    "type": "object"
+  }
+}

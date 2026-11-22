@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="680" viewBox="0 0 1260 680" font-family="Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="630" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f2937">Billing Database - ER Diagram (PostgreSQL)</text>
+<path d="M460,303.0 L415.0,303.0 L415.0,137.0 L370,137.0" fill="none" stroke="#475569" stroke-width="1.6"/>
+<text x="421.0" y="220.0" text-anchor="start" font-size="13" fill="#334155" font-style="italic">has login</text>
+<text x="442" y="297.0" font-size="13" font-weight="bold" fill="#0f766e">1</text>
+<text x="374" y="131.0" font-size="13" font-weight="bold" fill="#0f766e">0..*</text>
+<path d="M460,303.0 L415.0,303.0 L415.0,551.0 L370,551.0" fill="none" stroke="#475569" stroke-width="1.6"/>
+<text x="421.0" y="427.0" text-anchor="start" font-size="13" fill="#334155" font-style="italic">generates</text>
+<text x="442" y="297.0" font-size="13" font-weight="bold" fill="#0f766e">1</text>
+<text x="374" y="545.0" font-size="13" font-weight="bold" fill="#0f766e">0..*</text>
+<path d="M790,303.0 L835.0,303.0 L835.0,209.0 L880,209.0" fill="none" stroke="#475569" stroke-width="1.6"/>
+<text x="835.0" y="323.0" text-anchor="middle" font-size="13" fill="#334155" font-style="italic">is billed</text>
+<text x="800" y="297.0" font-size="13" font-weight="bold" fill="#0f766e">1</text>
+<text x="856" y="203.0" font-size="13" font-weight="bold" fill="#0f766e">0..*</text>
+<path d="M1045.0,358 L1045.0,450" fill="none" stroke="#475569" stroke-width="1.6"/>
+<text x="1053.0" y="408.0" text-anchor="start" font-size="13" fill="#334155" font-style="italic">is paid by</text>
+<text x="1025.0" y="376" font-size="13" font-weight="bold" fill="#0f766e">1</text>
+<text x="1005.0" y="444" font-size="13" font-weight="bold" fill="#0f766e">0..*</text>
+<rect x="40" y="60" width="330" height="154" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+<rect x="40" y="60" width="330" height="34" rx="6" fill="#0f766e"/>
+<rect x="40" y="88" width="330" height="6" fill="#0f766e"/>
+<text x="205.0" y="82" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">users</text>
+<text x="50" y="111" font-size="11" font-weight="bold" fill="#b45309">PK</text>
+<text x="78" y="111" font-size="13" font-weight="bold" fill="#111827">id</text>
+<text x="360" y="111" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="40" y1="118" x2="370" y2="118" stroke="#e2e8f0"/>
+<text x="50" y="135" font-size="11" font-weight="bold" fill="#b45309">UK</text>
+<text x="78" y="135" font-size="13" font-weight="normal" fill="#111827">username</text>
+<text x="360" y="135" text-anchor="end" font-size="12" fill="#475569">VARCHAR(50)</text>
+<line x1="40" y1="142" x2="370" y2="142" stroke="#e2e8f0"/>
+<text x="50" y="159" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="159" font-size="13" font-weight="normal" fill="#111827">password_hash</text>
+<text x="360" y="159" text-anchor="end" font-size="12" fill="#475569">VARCHAR(100) bcrypt</text>
+<line x1="40" y1="166" x2="370" y2="166" stroke="#e2e8f0"/>
+<text x="50" y="183" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="183" font-size="13" font-weight="normal" fill="#111827">role</text>
+<text x="360" y="183" text-anchor="end" font-size="12" fill="#475569">SUBSCRIBER / ADMIN</text>
+<line x1="40" y1="190" x2="370" y2="190" stroke="#e2e8f0"/>
+<text x="50" y="207" font-size="11" font-weight="bold" fill="#b45309">FK</text>
+<text x="78" y="207" font-size="13" font-weight="normal" fill="#111827">subscriber_no</text>
+<text x="360" y="207" text-anchor="end" font-size="12" fill="#475569">VARCHAR(20) NULL</text>
+<rect x="460" y="250" width="330" height="106" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+<rect x="460" y="250" width="330" height="34" rx="6" fill="#0f766e"/>
+<rect x="460" y="278" width="330" height="6" fill="#0f766e"/>
+<text x="625.0" y="272" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">subscribers</text>
+<text x="470" y="301" font-size="11" font-weight="bold" fill="#b45309">PK</text>
+<text x="498" y="301" font-size="13" font-weight="bold" fill="#111827">subscriber_no</text>
+<text x="780" y="301" text-anchor="end" font-size="12" fill="#475569">VARCHAR(20)</text>
+<line x1="460" y1="308" x2="790" y2="308" stroke="#e2e8f0"/>
+<text x="470" y="325" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="498" y="325" font-size="13" font-weight="normal" fill="#111827">full_name</text>
+<text x="780" y="325" text-anchor="end" font-size="12" fill="#475569">VARCHAR(100)</text>
+<line x1="460" y1="332" x2="790" y2="332" stroke="#e2e8f0"/>
+<text x="470" y="349" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="498" y="349" font-size="13" font-weight="normal" fill="#111827">created_at</text>
+<text x="780" y="349" text-anchor="end" font-size="12" fill="#475569">TIMESTAMPTZ</text>
+<rect x="40" y="450" width="330" height="202" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+<rect x="40" y="450" width="330" height="34" rx="6" fill="#0f766e"/>
+<rect x="40" y="478" width="330" height="6" fill="#0f766e"/>
+<text x="205.0" y="472" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">usage_records</text>
+<text x="50" y="501" font-size="11" font-weight="bold" fill="#b45309">PK</text>
+<text x="78" y="501" font-size="13" font-weight="bold" fill="#111827">id</text>
+<text x="360" y="501" text-anchor="end" font-size="12" fill="#475569">BIGINT</text>
+<line x1="40" y1="508" x2="370" y2="508" stroke="#e2e8f0"/>
+<text x="50" y="525" font-size="11" font-weight="bold" fill="#b45309">FK</text>
+<text x="78" y="525" font-size="13" font-weight="normal" fill="#111827">subscriber_no</text>
+<text x="360" y="525" text-anchor="end" font-size="12" fill="#475569">VARCHAR(20)</text>
+<line x1="40" y1="532" x2="370" y2="532" stroke="#e2e8f0"/>
+<text x="50" y="549" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="549" font-size="13" font-weight="normal" fill="#111827">year</text>
+<text x="360" y="549" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="40" y1="556" x2="370" y2="556" stroke="#e2e8f0"/>
+<text x="50" y="573" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="573" font-size="13" font-weight="normal" fill="#111827">month</text>
+<text x="360" y="573" text-anchor="end" font-size="12" fill="#475569">INTEGER 1-12</text>
+<line x1="40" y1="580" x2="370" y2="580" stroke="#e2e8f0"/>
+<text x="50" y="597" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="597" font-size="13" font-weight="normal" fill="#111827">usage_type</text>
+<text x="360" y="597" text-anchor="end" font-size="12" fill="#475569">PHONE / INTERNET</text>
+<line x1="40" y1="604" x2="370" y2="604" stroke="#e2e8f0"/>
+<text x="50" y="621" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="621" font-size="13" font-weight="normal" fill="#111827">quantity</text>
+<text x="360" y="621" text-anchor="end" font-size="12" fill="#475569">INT (10 min or 1 MB)</text>
+<line x1="40" y1="628" x2="370" y2="628" stroke="#e2e8f0"/>
+<text x="50" y="645" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="78" y="645" font-size="13" font-weight="normal" fill="#111827">recorded_at</text>
+<text x="360" y="645" text-anchor="end" font-size="12" fill="#475569">TIMESTAMPTZ</text>
+<rect x="880" y="60" width="330" height="298" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+<rect x="880" y="60" width="330" height="34" rx="6" fill="#0f766e"/>
+<rect x="880" y="88" width="330" height="6" fill="#0f766e"/>
+<text x="1045.0" y="82" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">bills</text>
+<text x="890" y="111" font-size="11" font-weight="bold" fill="#b45309">PK</text>
+<text x="918" y="111" font-size="13" font-weight="bold" fill="#111827">id</text>
+<text x="1200" y="111" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="880" y1="118" x2="1210" y2="118" stroke="#e2e8f0"/>
+<text x="890" y="135" font-size="11" font-weight="bold" fill="#b45309">FK</text>
+<text x="918" y="135" font-size="13" font-weight="normal" fill="#111827">subscriber_no</text>
+<text x="1200" y="135" text-anchor="end" font-size="12" fill="#475569">VARCHAR(20)</text>
+<line x1="880" y1="142" x2="1210" y2="142" stroke="#e2e8f0"/>
+<text x="890" y="159" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="159" font-size="13" font-weight="normal" fill="#111827">year / month</text>
+<text x="1200" y="159" text-anchor="end" font-size="12" fill="#475569">INTEGER (UNIQUE w/ sub.)</text>
+<line x1="880" y1="166" x2="1210" y2="166" stroke="#e2e8f0"/>
+<text x="890" y="183" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="183" font-size="13" font-weight="normal" fill="#111827">phone_minutes</text>
+<text x="1200" y="183" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="880" y1="190" x2="1210" y2="190" stroke="#e2e8f0"/>
+<text x="890" y="207" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="207" font-size="13" font-weight="normal" fill="#111827">internet_mb</text>
+<text x="1200" y="207" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="880" y1="214" x2="1210" y2="214" stroke="#e2e8f0"/>
+<text x="890" y="231" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="231" font-size="13" font-weight="normal" fill="#111827">phone_charge</text>
+<text x="1200" y="231" text-anchor="end" font-size="12" fill="#475569">NUMERIC(12,2)</text>
+<line x1="880" y1="238" x2="1210" y2="238" stroke="#e2e8f0"/>
+<text x="890" y="255" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="255" font-size="13" font-weight="normal" fill="#111827">internet_charge</text>
+<text x="1200" y="255" text-anchor="end" font-size="12" fill="#475569">NUMERIC(12,2)</text>
+<line x1="880" y1="262" x2="1210" y2="262" stroke="#e2e8f0"/>
+<text x="890" y="279" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="279" font-size="13" font-weight="normal" fill="#111827">total_amount</text>
+<text x="1200" y="279" text-anchor="end" font-size="12" fill="#475569">NUMERIC(12,2)</text>
+<line x1="880" y1="286" x2="1210" y2="286" stroke="#e2e8f0"/>
+<text x="890" y="303" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="303" font-size="13" font-weight="normal" fill="#111827">paid_amount</text>
+<text x="1200" y="303" text-anchor="end" font-size="12" fill="#475569">NUMERIC(12,2)</text>
+<line x1="880" y1="310" x2="1210" y2="310" stroke="#e2e8f0"/>
+<text x="890" y="327" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="327" font-size="13" font-weight="normal" fill="#111827">status</text>
+<text x="1200" y="327" text-anchor="end" font-size="12" fill="#475569">UNPAID / PARTIALLY_PAID / PAID</text>
+<line x1="880" y1="334" x2="1210" y2="334" stroke="#e2e8f0"/>
+<text x="890" y="351" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="351" font-size="13" font-weight="normal" fill="#111827">calculated_at</text>
+<text x="1200" y="351" text-anchor="end" font-size="12" fill="#475569">TIMESTAMPTZ</text>
+<rect x="880" y="450" width="330" height="178" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+<rect x="880" y="450" width="330" height="34" rx="6" fill="#0f766e"/>
+<rect x="880" y="478" width="330" height="6" fill="#0f766e"/>
+<text x="1045.0" y="472" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">payments</text>
+<text x="890" y="501" font-size="11" font-weight="bold" fill="#b45309">PK</text>
+<text x="918" y="501" font-size="13" font-weight="bold" fill="#111827">id</text>
+<text x="1200" y="501" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="880" y1="508" x2="1210" y2="508" stroke="#e2e8f0"/>
+<text x="890" y="525" font-size="11" font-weight="bold" fill="#b45309">FK</text>
+<text x="918" y="525" font-size="13" font-weight="normal" fill="#111827">bill_id</text>
+<text x="1200" y="525" text-anchor="end" font-size="12" fill="#475569">INTEGER</text>
+<line x1="880" y1="532" x2="1210" y2="532" stroke="#e2e8f0"/>
+<text x="890" y="549" font-size="11" font-weight="bold" fill="#b45309">UK</text>
+<text x="918" y="549" font-size="13" font-weight="normal" fill="#111827">transaction_id</text>
+<text x="1200" y="549" text-anchor="end" font-size="12" fill="#475569">VARCHAR(64)</text>
+<line x1="880" y1="556" x2="1210" y2="556" stroke="#e2e8f0"/>
+<text x="890" y="573" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="573" font-size="13" font-weight="normal" fill="#111827">amount</text>
+<text x="1200" y="573" text-anchor="end" font-size="12" fill="#475569">NUMERIC(12,2) &gt; 0</text>
+<line x1="880" y1="580" x2="1210" y2="580" stroke="#e2e8f0"/>
+<text x="890" y="597" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="597" font-size="13" font-weight="normal" fill="#111827">paid_by_username</text>
+<text x="1200" y="597" text-anchor="end" font-size="12" fill="#475569">VARCHAR(50)</text>
+<line x1="880" y1="604" x2="1210" y2="604" stroke="#e2e8f0"/>
+<text x="890" y="621" font-size="11" font-weight="bold" fill="#b45309"></text>
+<text x="918" y="621" font-size="13" font-weight="normal" fill="#111827">created_at</text>
+<text x="1200" y="621" text-anchor="end" font-size="12" fill="#475569">TIMESTAMPTZ</text>
+<text x="630" y="665" text-anchor="middle" font-size="12" fill="#64748b">PK primary key · FK foreign key · UK unique · bills UNIQUE(subscriber_no, year, month) · payments.transaction_id UNIQUE (duplicate protection)</text>
+</svg>

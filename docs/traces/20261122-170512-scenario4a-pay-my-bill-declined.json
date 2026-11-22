@@ -1,0 +1,79 @@
+{
+  "model": "claude-haiku-5-5",
+  "question": "Pay my bill",
+  "trace": [
+    {
+      "kind": "llm",
+      "stopReason": "tool_use",
+      "selectedTools": [
+        {
+          "name": "query_bill",
+          "input": {
+            "month": 10,
+            "year": 2026
+          }
+        }
+      ]
+    },
+    {
+      "kind": "tool",
+      "tool": "query_bill",
+      "route": "REST via API Gateway",
+      "input": {
+        "month": 10,
+        "year": 2026
+      },
+      "result": {
+        "subscriberNo": "5551001",
+        "month": 10,
+        "year": 2026,
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "dueDate": "2026-11-15",
+        "calculatedAt": "2026-11-22T14:04:06.587959Z"
+      },
+      "isError": false
+    },
+    {
+      "kind": "llm",
+      "stopReason": "tool_use",
+      "selectedTools": [
+        {
+          "name": "pay_bill",
+          "input": {
+            "month": 10,
+            "year": 2026,
+            "amount": 80.0
+          }
+        }
+      ]
+    },
+    {
+      "kind": "tool",
+      "tool": "pay_bill",
+      "route": "agent (payment not sent)",
+      "input": {
+        "month": 10,
+        "year": 2026,
+        "amount": 80.0
+      },
+      "result": {
+        "paymentStatus": "NOT_SUBMITTED",
+        "reason": "The user did not confirm the payment. Nothing was charged."
+      },
+      "isError": false
+    },
+    {
+      "kind": "llm",
+      "stopReason": "end_turn",
+      "selectedTools": []
+    }
+  ],
+  "finalAnswer": "Your October 2026 bill is **$80.00**, with nothing paid yet. It was due on **November 15, 2026**, so it is now past due.\n\nThe payment of **$80.00** for October 2026 was not submitted because it wasn't confirmed. Nothing has been charged. Please confirm the payment in the app to pay the full remaining balance.",
+  "usage": {
+    "input_tokens": 7320,
+    "output_tokens": 590
+  }
+}

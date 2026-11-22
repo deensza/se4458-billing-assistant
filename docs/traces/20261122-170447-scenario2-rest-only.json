@@ -1,0 +1,50 @@
+{
+  "model": "claude-haiku-5-5",
+  "question": "What is my October bill?",
+  "trace": [
+    {
+      "kind": "llm",
+      "stopReason": "tool_use",
+      "selectedTools": [
+        {
+          "name": "query_bill",
+          "input": {
+            "month": 10,
+            "year": 2026
+          }
+        }
+      ]
+    },
+    {
+      "kind": "tool",
+      "tool": "query_bill",
+      "route": "REST via API Gateway",
+      "input": {
+        "month": 10,
+        "year": 2026
+      },
+      "result": {
+        "subscriberNo": "5551001",
+        "month": 10,
+        "year": 2026,
+        "billTotal": 80.0,
+        "paidAmount": 0.0,
+        "remainingBalance": 80.0,
+        "status": "UNPAID",
+        "dueDate": "2026-11-15",
+        "calculatedAt": "2026-11-22T14:04:06.587959Z"
+      },
+      "isError": false
+    },
+    {
+      "kind": "llm",
+      "stopReason": "end_turn",
+      "selectedTools": []
+    }
+  ],
+  "finalAnswer": "Your October 2026 bill is **$80.00**. You have paid **$0.00**, so the remaining balance is **$80.00**. The status is **UNPAID**, and the due date was **November 15, 2026**.",
+  "usage": {
+    "input_tokens": 4492,
+    "output_tokens": 141
+  }
+}

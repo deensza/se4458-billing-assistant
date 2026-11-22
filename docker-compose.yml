@@ -1,0 +1,42 @@
+# Local stack: PostgreSQL + Billing API + MCP server + Kong API Gateway.
+# The Billing API is NOT published to the host: every REST call must go through the gateway (localhost:8000).
+#   docker compose up --build -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing
+      POSTGRES_DB: billing
+    ports: ["5433:5432"]   # only for running unit tests against PostgreSQL (optional)
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U billing -d billing"]
+      interval: 3s
+      retries: 20
+
+  billing-api:
+    build: ./billing_api
+    environment:
+      DATABASE_URL: postgresql+psycopg://billing:billing@postgres:5432/billing
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-0123456789abcdef}
+      SEED_DEMO_DATA: "true"
+      GATEWAY_SHARED_SECRET: ${GATEWAY_SECRET:-local-gateway-secret-0123456789}
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  mcp-server:
+    build: ./mcp_server
+    ports: ["8001:8001"]
+
+  gateway:
+    build: ./gateway
+    environment:
+      BILLING_API_URL: http://billing-api:8000
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-0123456789abcdef}
+      GATEWAY_SECRET: ${GATEWAY_SECRET:-local-gateway-secret-0123456789}
+    ports: ["8000:8000"]
+    depends_on: [billing-api]
+
+volumes:
+  pgdata:
