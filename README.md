@@ -439,7 +439,7 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 
 ## 14. Demo video
 
-Video: [`docs/demo-video.mp4`](docs/demo-video.mp4) (about 6 minutes, no audio, recorded against the Azure deployment). If the browser does not play it, use **View raw** / **Download**.
+Video file in this repository: `docs/demo-video.mp4` (about 6 minutes, no audio, recorded against the Azure deployment). GitHub does not preview a file this large, so use the direct download link: [download demo-video.mp4](https://github.com/deensza/se4458-billing-assistant/raw/main/docs/demo-video.mp4).
 
 In order, it shows:
 1. This README: architecture diagram (§1), ER diagram (§6), gateway routes (§8) and cloud URLs (§12).
