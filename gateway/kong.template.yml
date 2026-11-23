@@ -6,10 +6,11 @@
 #   POST /api/v1/auth/token         -> billing-api  public (rate limit per client IP: 10/min)
 #   GET  /api/v1/bills               -> billing-api  public Query Bill (rate limit per client IP: 60/min)
 #   GET  /api/v1/bills/detailed      -> billing-api  PROTECTED (JWT) Query Bill Detailed
-#   POST /api/v1/bills/calculate     -> billing-api  PROTECTED (JWT, ADMIN checked by API) Calculate Bill
-#   POST /api/v1/usage               -> billing-api  PROTECTED (JWT, ADMIN checked by API) Add Usage
+#   POST /api/v1/bills/calculate     -> billing-api  PROTECTED (JWT; own account or ADMIN, checked by API) Calculate Bill
+#   POST /api/v1/usage               -> billing-api  PROTECTED (JWT; own account or ADMIN, checked by API) Add Usage
 #   POST /api/v1/payments            -> billing-api  PROTECTED (JWT) Pay Bill
 #   GET  /api/v1/docs, /api/v1/openapi.json, /health -> billing-api Swagger UI / OpenAPI / health
+#   GET  /, /api/v1                  -> answered by the gateway itself: 302 redirect to the Swagger UI
 # Protected routes are rate limited per authenticated identity (JWT "sub"), not per IP: 60/min.
 _format_version: "3.0"
 _transform: true
@@ -82,6 +83,19 @@ services:
         paths: ["/api/v1/docs", "/api/v1/openapi.json", "/health"]
         methods: ["GET"]
         strip_path: false
+
+      # Landing page: the gateway's base URL (and /api/v1) redirect to the Swagger UI instead of a 404.
+      # Answered by Kong itself; the request never reaches the Billing API.
+      - name: root-redirect
+        paths: ["~/$", "~/api/v1/?$"]
+        methods: ["GET", "HEAD"]
+        strip_path: false
+        plugins:
+          - name: pre-function
+            config:
+              access:
+                - |
+                  return kong.response.exit(302, nil, { ["Location"] = "/api/v1/docs" })
 
 consumers:
   - username: billing-auth-service

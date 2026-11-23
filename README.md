@@ -223,6 +223,7 @@ Kong 3.9, DB-less, configured by [`gateway/kong.template.yml`](gateway/kong.temp
 | `/api/v1/usage` | POST | `/api/v1/usage` | **protected: JWT**, 60/min per user |
 | `/api/v1/payments` | POST | `/api/v1/payments` | **protected: JWT**, 60/min per user |
 | `/api/v1/docs`, `/api/v1/openapi.json`, `/health` | GET | same | public |
+| `/`, `/api/v1` | GET | – (answered by Kong) | **302 redirect to the Swagger UI**, so the gateway's base URL opens the API documentation |
 
 * **Authentication is enforced consistently.** All payment, account-detail and admin routes require a valid JWT at the gateway, and authorization happens in the API.
 * **Rate limiting is keyed by identity, not only IP.** On protected routes, a `pre-function` plugin derives the key from the JWT `sub` claim, so each user has their own counter (`X-RateLimit-Remaining-Minute` header). A client cannot spoof it because the header is always overwritten, and forged tokens are rejected by the `jwt` plugin before the limit is counted. The Group 2 specification defines no numeric limits; the values above are my own documented choice.
@@ -401,7 +402,7 @@ The script is re-runnable (it updates existing apps with a new image tag). Gener
 
 | Component | URL |
 |---|---|
-| API Gateway (base URL) | **https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io** (region Germany West Central) |
+| API Gateway (base URL) | **https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io** (region Germany West Central; opening it in a browser redirects to the Swagger UI) |
 | Swagger UI | https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/docs |
 | MCP server | https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp (health: `/health`) |
 | Billing API | `https://billing-api.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io`: direct calls return **403 GATEWAY_REQUIRED**, use the gateway |
