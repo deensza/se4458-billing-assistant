@@ -115,3 +115,45 @@ def test_mcp_tool_empty_query_returns_message():
 
     data = anyio.run(run).structured_content
     assert data["matches"] == [] and data["message"] == "Empty query."
+
+
+def test_browser_gets_info_page_on_root_and_mcp_path():
+    import httpx
+
+    async def run():
+        app = server.build_app()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            pages = [await client.get(path, headers={"Accept": "text/html"}) for path in ("/", "/mcp")]
+        return pages
+
+    for page in anyio.run(run):
+        assert page.status_code == 200
+        assert page.headers["content-type"].startswith("text/html")
+        assert "search_billing_documentation" in page.text
+        assert "http://test/mcp" in page.text
+
+
+def test_mcp_post_still_works_behind_the_info_page():
+    import httpx
+
+    async def run():
+        app = server.build_app()
+        async with app.router.lifespan_context(app):
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                return await client.post(
+                    "/mcp",
+                    headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "tools/call",
+                        "params": {"name": "search_billing_documentation", "arguments": {"query": "extra internet cost"}},
+                    },
+                )
+
+    response = anyio.run(run)
+    assert response.status_code == 200
+    sections = [m["section"] for m in response.json()["result"]["structuredContent"]["matches"]]
+    assert sections[:2] == ["8.1", "3.2"]

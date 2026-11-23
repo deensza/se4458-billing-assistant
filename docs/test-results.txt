@@ -1,4 +1,4 @@
-Test run: 2026-11-22 15:01:24 UTC
+Test run: 2026-11-23 14:12:46 UTC
 
 ================ billing_api ================
 ============================= test session starts ==============================
@@ -86,7 +86,7 @@ tests/test_query_bill_detailed.py::test_detailed_admin_can_read_any_account PASS
 tests/test_query_bill_detailed.py::test_detailed_requires_token PASSED   [ 98%]
 tests/test_query_bill_detailed.py::test_detailed_bill_not_calculated_is_404 PASSED [100%]
 
-============================== 76 passed in 8.06s ==============================
+============================== 76 passed in 8.01s ==============================
 
 ================ mcp_server ================
 ============================= test session starts ==============================
@@ -95,24 +95,26 @@ rootdir: /Users/denizakkaya/Downloads/se4458-billing-assistant/mcp_server
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.16.0
-collecting ... collected 14 items
+collecting ... collected 16 items
 
-tests/test_mcp_server.py::test_document_is_split_into_section_chunks PASSED [  7%]
-tests/test_mcp_server.py::test_chunk_keeps_heading_parent_and_text PASSED [ 14%]
-tests/test_mcp_server.py::test_headings_inside_code_blocks_are_not_split PASSED [ 21%]
-tests/test_mcp_server.py::test_tokenizer_removes_stop_words_and_stems PASSED [ 28%]
-tests/test_mcp_server.py::test_three_distinct_retrieval_queries[How much does extra internet cost?-expected_sections0] PASSED [ 35%]
-tests/test_mcp_server.py::test_three_distinct_retrieval_queries[What happens with late payments?-expected_sections1] PASSED [ 42%]
-tests/test_mcp_server.py::test_three_distinct_retrieval_queries[How can I dispute a charge on my bill?-expected_sections2] PASSED [ 50%]
-tests/test_mcp_server.py::test_partial_payment_query PASSED              [ 57%]
-tests/test_mcp_server.py::test_unrelated_query_returns_no_matches PASSED [ 64%]
-tests/test_mcp_server.py::test_result_format_matches_guide_section_9 PASSED [ 71%]
-tests/test_mcp_server.py::test_index_is_built_once_at_startup PASSED     [ 78%]
-tests/test_mcp_server.py::test_mcp_tool_is_listed_with_query_schema PASSED [ 85%]
-tests/test_mcp_server.py::test_mcp_tool_call_returns_excerpts_with_sections PASSED [ 92%]
-tests/test_mcp_server.py::test_mcp_tool_empty_query_returns_message PASSED [100%]
+tests/test_mcp_server.py::test_document_is_split_into_section_chunks PASSED [  6%]
+tests/test_mcp_server.py::test_chunk_keeps_heading_parent_and_text PASSED [ 12%]
+tests/test_mcp_server.py::test_headings_inside_code_blocks_are_not_split PASSED [ 18%]
+tests/test_mcp_server.py::test_tokenizer_removes_stop_words_and_stems PASSED [ 25%]
+tests/test_mcp_server.py::test_three_distinct_retrieval_queries[How much does extra internet cost?-expected_sections0] PASSED [ 31%]
+tests/test_mcp_server.py::test_three_distinct_retrieval_queries[What happens with late payments?-expected_sections1] PASSED [ 37%]
+tests/test_mcp_server.py::test_three_distinct_retrieval_queries[How can I dispute a charge on my bill?-expected_sections2] PASSED [ 43%]
+tests/test_mcp_server.py::test_partial_payment_query PASSED              [ 50%]
+tests/test_mcp_server.py::test_unrelated_query_returns_no_matches PASSED [ 56%]
+tests/test_mcp_server.py::test_result_format_matches_guide_section_9 PASSED [ 62%]
+tests/test_mcp_server.py::test_index_is_built_once_at_startup PASSED     [ 68%]
+tests/test_mcp_server.py::test_mcp_tool_is_listed_with_query_schema PASSED [ 75%]
+tests/test_mcp_server.py::test_mcp_tool_call_returns_excerpts_with_sections PASSED [ 81%]
+tests/test_mcp_server.py::test_mcp_tool_empty_query_returns_message PASSED [ 87%]
+tests/test_mcp_server.py::test_browser_gets_info_page_on_root_and_mcp_path PASSED [ 93%]
+tests/test_mcp_server.py::test_mcp_post_still_works_behind_the_info_page PASSED [100%]
 
-============================== 14 passed in 0.37s ==============================
+============================== 16 passed in 0.38s ==============================
 
 ================ agent ================
 ============================= test session starts ==============================

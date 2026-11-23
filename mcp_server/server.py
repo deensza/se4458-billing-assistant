@@ -4,6 +4,7 @@
 
 The policy document is indexed ONCE at start-up (see docs_index.py); every tool call reuses the index.
 Endpoint: http://<host>:8001/mcp     Health check: GET /health
+A browser opening / or /mcp gets a short HTML page that describes the server and can run the tool.
 """
 
 from __future__ import annotations
@@ -15,7 +16,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
@@ -91,14 +93,108 @@ async def health(_: Request) -> JSONResponse:
     return JSONResponse({"status": "ok", "document": INDEX.document, "chunks": len(INDEX.chunks)})
 
 
-if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http",
-        host=os.getenv("MCP_HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", "8001")),
+INFO_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing Documentation MCP Server</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:860px;margin:32px auto;padding:0 16px;color:#1f2937;line-height:1.5}
+h1{font-size:24px;margin-bottom:4px}code,pre{background:#f3f4f6;border-radius:4px}code{padding:1px 4px}
+pre{padding:12px;overflow-x:auto;font-size:13px;white-space:pre-wrap}
+input{width:70%;padding:8px;font-size:15px}button{padding:8px 16px;font-size:15px;cursor:pointer}
+.match{border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;margin:8px 0}.muted{color:#6b7280}
+</style></head><body>
+<h1>Billing Documentation MCP Server</h1>
+<p class="muted">SE 4458 Midterm 1, Group 2. Official MCP Python SDK, Streamable HTTP transport.</p>
+<p>This is an <b>MCP server</b>, not a website: MCP clients (the AI agent) send JSON-RPC requests with
+<code>POST /mcp</code>. This page is shown only to browsers. The server indexes
+<code>__DOCUMENT__</code> (<code>__DOCUMENT_ID__</code>) once at start-up into __CHUNKS__ chunks.</p>
+<h2>Tool</h2>
+<p><code>search_billing_documentation(query: string)</code> returns up to 3 excerpts of the billing guide
+with section numbers. It contains no subscriber data.</p>
+<h2>Try the tool</h2>
+<p>This form sends a real MCP <code>tools/call</code> request to <code>/mcp</code>:</p>
+<form id="f"><input id="q" value="How much does extra internet cost?" aria-label="Query">
+<button>Search</button></form>
+<div id="out"></div>
+<h2>Same request with curl</h2>
+<pre>curl -X POST __BASE__/mcp \\
+  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_billing_documentation","arguments":{"query":"extra internet cost"}}}'</pre>
+<p>Health check: <a href="/health">/health</a></p>
+<script>
+document.getElementById("f").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const out = document.getElementById("out");
+  out.textContent = "Searching...";
+  try {
+    const r = await fetch("/mcp", {method: "POST",
+      headers: {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+      body: JSON.stringify({jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: {name: "search_billing_documentation", arguments: {query: document.getElementById("q").value}}})});
+    const data = await r.json();
+    const result = data.result && data.result.structuredContent;
+    out.textContent = "";
+    if (!result) { out.textContent = JSON.stringify(data); return; }
+    if (!result.matches.length) { out.textContent = result.message || "No match."; return; }
+    for (const m of result.matches) {
+      const div = document.createElement("div"); div.className = "match";
+      const h = document.createElement("b"); h.textContent = "\\u00a7" + m.section + " " + m.heading;
+      const s = document.createElement("span"); s.className = "muted"; s.textContent = "  (score " + m.score + ")";
+      const t = document.createElement("div"); t.textContent = m.text.replace(/\\*\\*/g, "");
+      div.append(h, s, t); out.append(div);
+    }
+  } catch (err) { out.textContent = "Error: " + err; }
+});
+</script>
+</body></html>
+"""
+
+
+def info_page(base_url: str) -> str:
+    return (
+        INFO_PAGE.replace("__DOCUMENT__", INDEX.document)
+        .replace("__DOCUMENT_ID__", INDEX.document_id)
+        .replace("__CHUNKS__", str(len(INDEX.chunks)))
+        .replace("__BASE__", base_url.rstrip("/"))
+    )
+
+
+class BrowserInfoPage:
+    """ASGI middleware: a browser GET on / or /mcp gets the HTML info page.
+
+    MCP clients are not affected: they POST to /mcp, and a GET that asks for an SSE stream
+    (Accept: text/event-stream) is passed to the MCP transport unchanged.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope["method"] in ("GET", "HEAD") and scope["path"] in ("/", "/mcp"):
+            request = Request(scope)
+            if "text/event-stream" not in request.headers.get("accept", ""):
+                proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+                base = f"{proto}://{request.headers.get('host', request.url.netloc)}"
+                await HTMLResponse(info_page(base))(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+def build_app(host: str = "0.0.0.0") -> ASGIApp:
+    app = mcp.streamable_http_app(
         stateless_http=True,
         json_response=True,
         # Read-only public documentation search served behind a cloud ingress with its own
         # hostname, so Host-header (DNS rebinding) checks are disabled.
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+        host=host,
     )
+    app.add_middleware(BrowserInfoPage)
+    return app
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    host = os.getenv("MCP_HOST", "0.0.0.0")
+    uvicorn.run(build_app(host), host=host, port=int(os.getenv("PORT", "8001")), proxy_headers=True, forwarded_allow_ips="*")

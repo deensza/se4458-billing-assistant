@@ -65,7 +65,7 @@ billing_api/            Billing REST API (FastAPI, SQLAlchemy, PostgreSQL)
 mcp_server/             MCP server (official MCP Python SDK, Streamable HTTP)
   server.py             tool search_billing_documentation(query)
   docs_index.py         chunking + BM25 full-text index
-  data/Mobile_Provider_Billing_Guide.md          tests/   14 unit tests
+  data/Mobile_Provider_Billing_Guide.md          tests/   16 unit tests
 agent/                  AI agent (Claude tool calling) + CLI chat
   billing_agent.py      orchestrator: tool loop, confirmation gate, trace
   clients.py            MCP client + API-Gateway REST client
@@ -256,6 +256,7 @@ Result (format from guide §9, plus `documentId`, `parentHeading`, `score`):
              {"section": "3.2", "heading": "Additional internet blocks", "parentHeading": "3. Internet pricing", "text": "...", "score": 7.27}]}
 ```
 Endpoint: `{MCP_URL}` = `http://localhost:8001/mcp` (Streamable HTTP, stateless, JSON responses). Health check: `/health`.
+MCP clients `POST` JSON-RPC to `/mcp`. A **browser** opening `/` or `/mcp` gets a short HTML page instead: it describes the server and has a search form that sends a real MCP `tools/call` request (MCP clients are not affected; tested in `mcp_server/tests`).
 
 ### 9.2 Indexing approach ([`mcp_server/docs_index.py`](mcp_server/docs_index.py))
 1. **Chunking by headings:** each `### x.y` subsection is a chunk; a `## x` section without subsections is one chunk; the preamble is chunk `0`. That gives **26 chunks**. Headings inside code blocks are ignored. Each chunk keeps its section ID, heading, parent heading and text, so answers can cite "§3.2".
@@ -342,12 +343,12 @@ docker compose down -v && docker compose up -d
 
 ## 11. Unit tests
 
-**101 automated tests** (pytest). They need **no cloud, no gateway and no LLM**.
+**103 automated tests** (pytest). They need **no cloud, no gateway and no LLM**.
 
 | Suite | Tests | Covers |
 |---|---|---|
 | `billing_api/tests` | 76 | every REST operation: success + failure/edge cases (Add Usage, Calculate Bill, Query Bill, Query Bill Detailed, Pay Bill, Login), pricing rules (all examples of guide §2–4), JWT (missing/tampered/expired), authorization (403), paging, validation, duplicate transaction, amount > balance, gateway-only access (origin protection) |
-| `mcp_server/tests` | 14 | chunking, tokenizer, 3 distinct retrieval queries, result format, MCP client↔server `list_tools`/`call_tool` |
+| `mcp_server/tests` | 16 | chunking, tokenizer, 3 distinct retrieval queries, result format, MCP client↔server `list_tools`/`call_tool`, browser info page + JSON-RPC `tools/call` over HTTP |
 | `agent/tests` | 11 | tool routing (MCP-only, REST-only, combined) with a scripted fake LLM, payment confirmation gate, no `subscriberNo` in REST tools, API errors returned as tool errors, refusal and loop limits |
 
 **Every REST API operation has success and failure/edge-case tests** (`billing_api/tests`):
@@ -373,7 +374,7 @@ By default the API tests use a fresh **in-memory SQLite database per test** for 
 docker compose exec postgres psql -U billing -c "CREATE DATABASE billing_test;"
 cd billing_api && TEST_DATABASE_URL=postgresql+psycopg://billing:billing@localhost:5433/billing_test ../.venv/bin/pytest
 ```
-**Evidence:** [`docs/test-results.txt`](docs/test-results.txt): 76 + 14 + 11 = **101 passed**. The API suite also passes against PostgreSQL 16: [`docs/test-results-postgresql.txt`](docs/test-results-postgresql.txt) (76 passed).
+**Evidence:** [`docs/test-results.txt`](docs/test-results.txt): 76 + 16 + 11 = **103 passed**. The API suite also passes against PostgreSQL 16: [`docs/test-results-postgresql.txt`](docs/test-results-postgresql.txt) (76 passed).
 
 ```
 $ ./scripts/run_tests.sh
@@ -383,9 +384,9 @@ tests/test_add_usage.py::test_add_phone_usage_adds_10_minutes PASSED
 tests/test_pay_bill.py::test_duplicate_transaction_id_is_rejected PASSED
 tests/test_pay_bill.py::test_amount_exceeding_balance_is_rejected PASSED
 ...
-============================== 76 passed in 8.06s ==============================
+============================== 76 passed in 8.01s ==============================
 ================ mcp_server ================
-============================== 14 passed in 0.37s ==============================
+============================== 16 passed in 0.38s ==============================
 ================ agent ================
 ============================== 11 passed in 0.02s ==============================
 ```
@@ -404,7 +405,7 @@ The script is re-runnable (it updates existing apps with a new image tag). Gener
 |---|---|
 | API Gateway (base URL) | **https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io** (region Germany West Central; opening it in a browser redirects to the Swagger UI) |
 | Swagger UI | https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/docs |
-| MCP server | https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp (health: `/health`) |
+| MCP server | https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp (health: `/health`; opening it in a browser shows a description page with a search form) |
 | Billing API | `https://billing-api.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io`: direct calls return **403 GATEWAY_REQUIRED**, use the gateway |
 | PostgreSQL | `se4458bill11826-db.postgres.database.azure.com`, database `billing` (region Spain Central; credentials are not published) |
 
@@ -489,4 +490,4 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 
 * Default model **`claude-haiku-5-5`**: $0.10 per 1M input tokens and $0.50 per 1M output tokens (Anthropic list price for prompts up to 100K tokens; every prompt here is far below that). A typical question uses 2–3 LLM calls of about 3–4K input tokens each, which is **about $0.001 per question**. All demo scenarios together cost well under $0.05. The CLI prints the token usage and estimated cost of every turn.
 * `AGENT_MODEL` can switch to a larger model (e.g. `claude-sonnet-5-5`) without code changes.
-* **No LLM is needed for testing:** all 101 unit tests use a scripted fake LLM / in-process MCP, and the REST API and gateway can be tested fully with Swagger, curl or `scripts/gateway_demo.sh`.
+* **No LLM is needed for testing:** all 103 unit tests use a scripted fake LLM / in-process MCP, and the REST API and gateway can be tested fully with Swagger, curl or `scripts/gateway_demo.sh`.
