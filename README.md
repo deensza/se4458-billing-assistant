@@ -339,6 +339,8 @@ python3.12 -m venv .venv
 docker compose down -v && docker compose up -d
 ```
 
+**Windows:** run the commands in **Git Bash** (installed with Git for Windows) with Docker Desktop running. Three differences: create the environment with `py -3.12 -m venv .venv`, use `.venv/Scripts/` instead of `.venv/bin/` (for example `.venv/Scripts/pip`, `.venv/Scripts/python agent/cli.py ...`), and open the Swagger UI in the browser instead of `open`. `./scripts/run_tests.sh` and `./scripts/gateway_demo.sh` find the Windows virtualenv automatically, and `.gitattributes` keeps LF line endings so the scripts and the gateway container work after a Windows checkout. No local build is needed to check the system: the cloud URLs in §12 work from any OS and browser.
+
 ## 11. Unit tests
 
 **103 automated tests** (pytest). They need **no cloud, no gateway and no LLM**.
@@ -429,7 +431,7 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 | `user1003` / `Pass1003!` | SUBSCRIBER | 5551003 | Oct 2026: 1,010 min, 20,001 MB recorded, **bill not calculated yet** (admin demo: Calculate Bill → $70) |
 
 **Steps:**
-1. `docker compose up --build -d` (or use the cloud URLs in §12), then create the Python environment (§10 step 2).
+1. `docker compose up --build -d` (or use the cloud URLs in §12), then create the Python environment (§10 step 2). On Windows, see the note at the end of §10.
 2. Unit tests: `./scripts/run_tests.sh` (no Docker, cloud or API key needed for this step).
 3. Gateway demo: `GATEWAY_URL=http://localhost:8000 ./scripts/gateway_demo.sh`.
 4. Swagger UI: open `/api/v1/docs`, call `POST /api/v1/auth/token`, click **Authorize**, paste the token, and try the protected operations.

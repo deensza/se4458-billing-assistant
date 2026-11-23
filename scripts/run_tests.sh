@@ -5,7 +5,9 @@
 #   TEST_DATABASE_URL=postgresql+psycopg://billing:billing@localhost:5433/billing_test ./scripts/run_tests.sh
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PY="${PYTHON:-$ROOT/.venv/bin/python}"
+DEFAULT_PY="$ROOT/.venv/bin/python"
+[ -x "$DEFAULT_PY" ] || DEFAULT_PY="$ROOT/.venv/Scripts/python.exe"   # Windows (Git Bash) virtualenv layout
+PY="${PYTHON:-$DEFAULT_PY}"
 OUT="$ROOT/docs/test-results.txt"
 status=0
 {

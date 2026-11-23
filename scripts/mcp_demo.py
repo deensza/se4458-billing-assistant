@@ -8,6 +8,7 @@ lists the tool and runs three distinct retrieval queries.
 import asyncio
 import json
 import os
+import sys
 from datetime import datetime, timezone
 
 from mcp import Client
@@ -40,4 +41,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    # Windows consoles and Git Bash may default to a legacy code page; the output contains characters like "≈" and "⚠️".
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     asyncio.run(main())

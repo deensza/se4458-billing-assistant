@@ -5,11 +5,16 @@
 # rate-limit headers, and a simulated payment with duplicate protection.
 set -u
 G="${GATEWAY_URL:-http://localhost:8000}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Python used only to read the token from JSON: the project virtualenv (macOS/Linux or Windows layout), else python3.
+PY="${PYTHON:-}"
+for c in "$ROOT/.venv/bin/python" "$ROOT/.venv/Scripts/python.exe"; do [ -z "$PY" ] && [ -x "$c" ] && PY="$c"; done
+PY="${PY:-python3}"
 h() { echo; echo "### $*"; }
 call() { echo "\$ curl $*" | sed -E 's/Bearer [A-Za-z0-9._-]+/Bearer <JWT>/'; curl -s -i "$@" | grep -iE '^HTTP/|^x-ratelimit-remaining-minute|^x-api-gateway|^x-request-id|^\{' ; echo; }
 token() {
   curl -s -X POST "$G/api/v1/auth/token" -H 'Content-Type: application/json' \
-    -d "{\"username\":\"$1\",\"password\":\"$2\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])'
+    -d "{\"username\":\"$1\",\"password\":\"$2\"}" | "$PY" -c 'import sys,json;print(json.load(sys.stdin)["accessToken"])'
 }
 
 echo "Gateway: $G"

@@ -1,0 +1,5 @@
+# Keep LF line endings on every platform (Windows Git defaults to CRLF on checkout).
+# gateway/entrypoint.sh runs inside a Linux container and the bash scripts fail with CRLF.
+* text=auto eol=lf
+*.mp4 binary
+*.png binary
