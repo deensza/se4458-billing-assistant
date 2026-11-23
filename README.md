@@ -9,8 +9,6 @@ An integrated, service-oriented system with the four mandatory components:
 3. **Billing REST API + server database** (`billing_api/`): FastAPI and PostgreSQL, versioned under `/api/v1`, JWT authentication, Swagger UI.
 4. **API Gateway** (`gateway/`): Kong (DB-less). **All** REST calls go through it, including the agent's calls.
 
-> ⚠️ **TODO before submission:** add the [§ 14 demo video link](#14-demo-video).
-
 **Live deployment (Azure):** API Gateway `https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io` · Swagger UI `https://gateway.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/api/v1/docs` · MCP `https://mcp-server.happystone-4bc228e1.germanywestcentral.azurecontainerapps.io/mcp`
 
 ---
@@ -441,7 +439,16 @@ Seeded automatically on first start ([`billing_api/app/seed.py`](billing_api/app
 
 ## 14. Demo video
 
-> TODO: link to the short demonstration video (scenarios of §9.4, gateway demo, unit tests).
+Video: [`docs/demo-video.mp4`](docs/demo-video.mp4) (about 6 minutes, no audio, recorded against the Azure deployment). If the browser does not play it, use **View raw** / **Download**.
+
+In order, it shows:
+1. This README: architecture diagram (§1), ER diagram (§6), gateway routes (§8) and cloud URLs (§12).
+2. Unit tests run with `./scripts/run_tests.sh`: 76 + 16 + 11 passed (§11).
+3. Three distinct MCP retrieval tests with `scripts/mcp_demo.py` against the cloud MCP server (§9.3).
+4. The MCP server's browser page answering "Can I pay only part of my bill?" (§8.3, §5.1, §5.3).
+5. The gateway demo (`scripts/gateway_demo.sh`): public route, protected route rejected without a token (401) and with a forged token (401), login, protected route with a token (200), access to another subscriber blocked (403), a $30 simulated payment (201), duplicate transaction ID (409), amount above the balance (422), unknown route (404) and a direct call that bypasses the gateway (403 `GATEWAY_REQUIRED`).
+6. Swagger UI through the gateway: login, **Authorize**, then the protected `GET /api/v1/bills/detailed`.
+7. The AI agent (`agent/cli.py`, user1001): MCP-only ("How much does extra internet cost?"), API-only ("What is my October bill?"), combined ("Why is my October bill higher?"), then "Pay my bill" with the confirmation prompt answered `yes`, and a final check that the bill is PAID.
 
 ## 15. Assumptions
 
